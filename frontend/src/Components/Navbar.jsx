@@ -1,6 +1,4 @@
 
-
-
 import { Link, NavLink } from "react-router-dom";
 import { useState } from "react";
 
@@ -116,7 +114,7 @@ const Navbar = () => {
 
       {/* Mobile Sidebar and Overlay */}
       <div
-        className={`fixed inset-0 z-100 md:hidden ${
+       className={`fixed inset-0 z-[100] md:hidden ${
           menuOpen
             ? "visible"
             : "invisible pointer-events-none"

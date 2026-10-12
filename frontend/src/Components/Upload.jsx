@@ -1,4 +1,6 @@
-// import "../Css/Upload.css"
+
+// import "../Css/Up
+
 export const Upload = () => {
   return (
     <div className="mx-10 mt-10 rounded-2xl p-5  lg:mx-auto lg:max-w-4xl lg:p-8 shadow-2xl">

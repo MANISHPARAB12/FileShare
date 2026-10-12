@@ -1,19 +1,8 @@
-
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./Components/Navbar";
-import { Upload } from "./Components/Upload";
-
-function Home() {
-  return <Upload />;
-}
-
-function About() {
-  return <div className="p-8">About Page</div>;
-}
-
-function FAQ() {
-  return <div className="p-8">FAQ Page</div>;
-}
+import Home from "./Components/Home";
+import About from "./Components/About";
+import FAQ from "./Components/FAQ";
 
 export default function App() {
   return (

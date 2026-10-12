@@ -1,4 +1,3 @@
-
 export const Upload = () => {
   return (
     <div className="mx-auto mt-10 max-w-4xl px-4">

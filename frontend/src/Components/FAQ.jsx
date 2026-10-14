@@ -1,81 +1,50 @@
 import { useState } from "react";
 
 function FAQ() {
-  // Store the number of the currently open question.
-  // null means all questions are closed.
   const [openIndex, setOpenIndex] = useState(null);
 
-  // All FAQ questions and answers
+  // FileShare FAQs
   const faqs = [
     {
-      question: "What is FileShare?",
+      question: "Do I need an account to use FileShare?",
       answer:
-        "FileShare is a file-sharing application that allows users to upload files and share them with other people through a sharing link.",
+        "No, you don't need to create an account to use FileShare if guest access is enabled. You can upload your files and share them with others using a sharing link or a 6-character code.",
     },
     {
-      question: "How do I upload files?",
+      question: "How do I share a file?",
       answer:
-        "Open the Home page, click the Choose Files button, select one or more files from your device, and follow the upload instructions.",
+        "Upload the file you want to share. Once the upload is complete, FileShare will provide a sharing link and, if supported, a 6-character code. Copy the link and send it to anyone, or share the code so they can access your file through FileShare.",
     },
     {
-      question: "How can I share files with someone?",
+      question: "How long are files stored?",
       answer:
-        "After a successful upload, FileShare can provide a sharing link that you can copy and send to the recipient.",
+        "Your files remain available according to FileShare's storage policy. If an expiration time is displayed, check it before sharing your file. Download important files before they expire or become unavailable.",
     },
     {
-      question: "Can I share files with someone on a different network?",
+      question: "What file types are supported?",
       answer:
-        "Yes, if your application is deployed online or uses a publicly accessible file-sharing service. A local development server usually cannot be accessed directly by someone outside your network.",
+        "FileShare can support common file formats such as images, PDF documents, videos, and ZIP archives, depending on its upload restrictions. If your file cannot be uploaded, check its format and size before trying again.",
     },
     {
-      question: "How does QR code sharing work?",
+      question: "Is my data secure?",
       answer:
-        "A QR code can contain your file-sharing link. The recipient scans the code with their phone to open the link. This feature must be implemented in the application.",
+        "FileShare is designed to make file sharing convenient. For your privacy, share your links and access codes only with people you trust. The actual protection of your files depends on the security measures implemented by the application.",
     },
     {
-      question: "Can I protect my files with a PIN?",
+      question: "What is the maximum file size?",
       answer:
-        "PIN protection can require a recipient to enter a PIN before accessing a shared file. This works only after PIN verification has been implemented on the server.",
+        "The maximum file size depends on FileShare's upload settings and storage provider. Check the upload page for the supported limit. If your file is too large, try compressing it or splitting it into smaller files.",
     },
     {
-      question: "Is there a file size limit?",
+      question: "Can I delete a file?",
       answer:
-        "The maximum file size depends on your application's upload configuration and storage provider. Check the upload page for the limit supported by your application.",
-    },
-    {
-      question: "How do I download a shared file?",
-      answer:
-        "Open the sharing link and use the download option provided on the page, if the upload has completed successfully and the link is still valid.",
-    },
-    {
-      question: "Are my files private and secure?",
-      answer:
-        "File privacy depends on how the application stores files and controls access. Use secure links, server-side access checks, and HTTPS to help protect shared files.",
-    },
-    {
-      question: "How long are shared files available?",
-      answer:
-        "File availability depends on your storage settings. Files remain available according to the retention or expiration rules configured by the application.",
-    },
-    {
-      question: "Can I share multiple files at once?",
-      answer:
-        "Yes. The upload input supports selecting multiple files. Whether they are uploaded and shared together depends on the upload functionality implemented in the application.",
-    },
-    {
-      question: "What should I do if my sharing link doesn't work?",
-      answer:
-        "Check your internet connection, confirm that the link is correct, and make sure the file is still available. If the problem continues, contact the application support team.",
+        "If FileShare provides a delete option, you can remove your uploaded file when you no longer want to share it. If deletion is not available, the file may remain accessible until it expires according to the configured storage policy.",
     },
   ];
 
-  // Open a question or close it if it is already open
+  // Open or close an FAQ
   const toggleFAQ = (index) => {
-    if (openIndex === index) {
-      setOpenIndex(null);
-    } else {
-      setOpenIndex(index);
-    }
+    setOpenIndex(openIndex === index ? null : index);
   };
 
   return (
@@ -83,7 +52,7 @@ function FAQ() {
       {/* Heading */}
       <div className="mx-auto mb-10 max-w-3xl text-center">
         <p className="mb-3 font-semibold uppercase tracking-widest text-purple-600">
-          Help Center
+          FileShare FAQs
         </p>
 
         <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
@@ -91,16 +60,16 @@ function FAQ() {
         </h1>
 
         <p className="mt-4 text-base leading-7 text-gray-600">
-          Have questions about FileShare? Find answers about uploading,
-          sharing, downloading, and protecting your files.
+          Find answers to common questions about uploading, sharing,
+          downloading, and managing your files with FileShare.
         </p>
       </div>
 
       {/* FAQ dropdown list */}
-      <div className="mx-auto max-w-3xl space-y-4">
+      <div className="mx-auto max-w-3xl space-y-3">
         {faqs.map((faq, index) => (
           <div
-            key={index}
+            key={faq.question}
             className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:border-purple-300"
           >
             {/* Clickable question */}
@@ -108,22 +77,26 @@ function FAQ() {
               type="button"
               onClick={() => toggleFAQ(index)}
               aria-expanded={openIndex === index}
-              className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left"
+              aria-controls={`faq-answer-${index}`}
+              className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-purple-50 sm:px-6"
             >
               <span className="font-semibold text-gray-800">
-                {faq.question}
+                {index + 1}. {faq.question}
               </span>
 
-              {/* Plus or minus icon */}
-              <span className="shrink-0 text-2xl font-medium text-purple-600">
-                {openIndex === index ? "−" : "+"}
+              {/* Dropdown icon */}
+              <span className="shrink-0 text-xl font-medium text-purple-600">
+                {openIndex === index ? "⌃" : "⌄"}
               </span>
             </button>
 
-            {/* Answer: visible only when the question is open */}
+            {/* Answer */}
             {openIndex === index && (
-              <div className="border-t border-gray-100 px-5 py-4">
-                <p className="leading-7 text-gray-600">
+              <div
+                id={`faq-answer-${index}`}
+                className="border-t border-gray-100 px-5 py-4 sm:px-6"
+              >
+                <p className="text-sm leading-7 text-gray-600 sm:text-base">
                   {faq.answer}
                 </p>
               </div>
@@ -133,13 +106,13 @@ function FAQ() {
       </div>
 
       {/* Contact section */}
-      <div className="mx-auto mt-12 max-w-3xl rounded-2xl bg-purple-100 px-6 py-8 text-center">
+      <div className="mx-auto mt-10 max-w-3xl rounded-2xl bg-purple-100 px-6 py-8 text-center">
         <h2 className="text-xl font-bold text-gray-900">
           Still have questions?
         </h2>
 
         <p className="mt-2 text-gray-600">
-          We are here to help you with your file-sharing experience.
+          Need help sharing your files? We're here to help.
         </p>
 
         <a

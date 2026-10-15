@@ -1,5 +1,5 @@
 
-import { Upload } from "./Upload";
+import  Upload  from "./Upload";
 
 function Home() {
   return (

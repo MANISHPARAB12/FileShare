@@ -198,13 +198,13 @@ const Upload = () => {
         </button>
 
         {error && (
-          <p role="alert" className="mt-4 break-words text-sm text-red-600">
+          <p role="alert" className="mt-4 wrap-break-word text-sm text-red-600">
             {error}
           </p>
         )}
 
         {message && (
-          <p role="status" className="mt-4 break-words text-sm text-green-700">
+          <p role="status" className="mt-4 wrap-break-word text-sm text-green-700">
             {message}
           </p>
         )}
@@ -220,15 +220,15 @@ const Upload = () => {
                 key={file.id}
                 className="rounded-xl border border-purple-200 bg-purple-50 p-4"
               >
-                <p className="break-all font-semibold text-gray-900">
+                <p className="text-lg break-all font-semibold text-gray-900">
                   {file.originalName}
                 </p>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-lg text-gray-500">
                   {formatFileSize(file.size)}
                 </p>
 
-                <p className="mt-3 text-sm text-gray-600">
+                <p className="mt-3 text-lg text-gray-600">
                   Share code:{" "}
                   <span className="font-mono font-bold text-purple-700">
                     {file.shareCode || "Unavailable"}
@@ -241,7 +241,7 @@ const Upload = () => {
                       {file.shareUrl}
                     </p>
 
-                    <div className="mt-4 flex flex-wrap gap-3">
+                    <div className="mt-5">
                       <button
                         type="button"
                         onClick={() => copyShareLink(file.shareUrl)}
@@ -249,22 +249,6 @@ const Upload = () => {
                       >
                         Copy Share Link
                       </button>
-
-                      <a
-                        href={file.shareUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border border-purple-300 bg-white px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-100"
-                      >
-                        Open Share Page
-                      </a>
-
-                      <a
-                        href={`${API_BASE_URL}/api/files/download/${encodeURIComponent(file.shareCode)}`}
-                        className="rounded-lg border border-purple-300 bg-white px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-100"
-                      >
-                        Download
-                      </a>
                     </div>
                   </>
                 )}

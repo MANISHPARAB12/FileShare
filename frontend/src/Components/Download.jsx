@@ -1,6 +1,5 @@
 
-import { useCallback, useState } from "react";
-// import {  } from "react-router-dom";
+import { useCallback, useRef, useState } from "react";
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:8956"
@@ -10,36 +9,32 @@ function formatFileSize(bytes = 0) {
   const size = Number(bytes) || 0;
 
   if (size < 1024) return `${size} B`;
-
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`;
-  }
-
-  if (size < 1024 * 1024 * 1024) {
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  if (size < 1024 * 1024 * 1024)
     return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-  }
 
   return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
+const CODE_LENGTH = 6;
+
 const Download = () => {
-  
-
-  const [shareCode, setShareCode] = useState("");
-  const [activeCode, setActiveCode] = useState("");
+  const [code, setCode] = useState(Array(CODE_LENGTH).fill(""));
   const [file, setFile] = useState(null);
+  const [activeCode, setActiveCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Find a shared file using its share code.
-  const fetchSharedFile = useCallback(async (code) => {
-    const normalizedCode = String(code || "").trim();
+  const inputRefs = useRef([]);
 
-    if (!normalizedCode) {
-      setError("Please enter a share code.");
-      setFile(null);
-      setActiveCode("");
+  const shareCode = code.join("");
+
+  const fetchSharedFile = useCallback(async (value) => {
+    const normalizedCode = value.trim();
+
+    if (normalizedCode.length !== CODE_LENGTH) {
+      setError("Please enter all 6 characters of your share code.");
       return;
     }
 
@@ -76,18 +71,85 @@ const Download = () => {
     }
   }, []);
 
-  
+  function handleCodeChange(index, value) {
+    const characters = value
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .slice(0, CODE_LENGTH);
 
-  // Submit the manually entered share code.
+    setError("");
+    setFile(null);
+    setActiveCode("");
+
+    // Support pasting the complete 6-character code.
+    if (characters.length > 1) {
+      const nextCode = Array(CODE_LENGTH).fill("");
+
+      for (let i = 0; i < characters.length; i++) {
+        if (index + i < CODE_LENGTH) {
+          nextCode[index + i] = characters[i];
+        }
+      }
+
+      setCode(nextCode);
+
+      const nextIndex = Math.min(
+        index + characters.length,
+        CODE_LENGTH - 1
+      );
+
+      inputRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    const nextCode = [...code];
+    nextCode[index] = characters;
+    setCode(nextCode);
+
+    if (characters && index < CODE_LENGTH - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  }
+
+  function handleKeyDown(index, event) {
+    if (
+      event.key === "Backspace" &&
+      !code[index] &&
+      index > 0
+    ) {
+      inputRefs.current[index - 1]?.focus();
+    }
+
+    if (event.key === "ArrowLeft" && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+
+    if (event.key === "ArrowRight" && index < CODE_LENGTH - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+
+      if (shareCode.length === CODE_LENGTH) {
+        fetchSharedFile(shareCode);
+      }
+    }
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
 
     if (loading || downloading) return;
 
+    if (shareCode.length !== CODE_LENGTH) {
+      setError("Please enter all 6 characters of your share code.");
+      inputRefs.current[code.findIndex((char) => !char)]?.focus();
+      return;
+    }
+
     fetchSharedFile(shareCode);
   }
 
-  // Download the selected shared file.
   async function handleDownload() {
     if (!file || !activeCode || downloading) return;
 
@@ -105,7 +167,6 @@ const Download = () => {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-
         throw new Error(data.message || "Download failed.");
       }
 
@@ -128,9 +189,7 @@ const Download = () => {
       setError(err.message || "Unable to download the file.");
     } finally {
       if (objectUrl) {
-        window.setTimeout(() => {
-          URL.revokeObjectURL(objectUrl);
-        }, 1000);
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
       }
 
       setDownloading(false);
@@ -163,60 +222,91 @@ const Download = () => {
         </h1>
 
         <p className="mt-2 text-center text-sm text-gray-500">
-          Enter the share code you received to find and download your file.
+          Enter the 6-character share code to find your file.
         </p>
 
-        {/* Share code input */}
         <form onSubmit={handleSubmit} className="mt-8">
-          <label
-            htmlFor="shareCode"
-            className="mb-2 block text-sm font-semibold text-gray-700"
-          >
+          <label className="mb-3 block text-sm font-semibold text-gray-700">
             Enter share code
           </label>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <input
-              id="shareCode"
-              type="text"
-              value={shareCode}
-              onChange={(event) => {
-                setShareCode(event.target.value);
-                setError("");
-              }}
-              placeholder="Enter your share code"
-              autoComplete="off"
-              maxLength={64}
-              required
-              className="min-w-0 flex-1 rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
-            />
+          {/* Six-character code input */}
+          <div
+            className="flex justify-center gap-2 sm:gap-3"
+            role="group"
+            aria-label="Six-character share code"
+          >
+            {code.map((character, index) => (
+              <input
+                key={index}
+                ref={(element) => {
+                  inputRefs.current[index] = element;
+                }}
+                type="text"
+                inputMode="text"
+                autoCapitalize="characters"
+                autoComplete={index === 0 ? "off" : "new-password"}
+                spellCheck={false}
+                maxLength={6}
+                value={character}
+                aria-label={`Share code character ${index + 1}`}
+                onChange={(event) =>
+                  handleCodeChange(index, event.target.value)
+                }
+                onKeyDown={(event) => handleKeyDown(index, event)}
+                onPaste={(event) => {
+                  const pasted = event.clipboardData
+                    .getData("text")
+                    .replace(/[^a-zA-Z0-9]/g, "")
+                    .slice(0, CODE_LENGTH)
+                    .toUpperCase();
 
-            <button
-              type="submit"
-              disabled={loading || downloading || !shareCode.trim()}
-              className="rounded-xl bg-purple-600 px-6 py-3 font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? "Searching..." : "Find File"}
-            </button>
+                  if (pasted.length > 1) {
+                    event.preventDefault();
+                    handleCodeChange(index, pasted);
+                  }
+                }}
+                className={`h-14 min-w-0 flex-1 max-w-14.5 rounded-xl border-2 text-center font-mono text-xl font-bold  text-gray-900 outline-none transition-all duration-200 sm:h-16 sm:text-2xl ${
+                  character
+                    ? "border-purple-500 bg-purple-50"
+                    : "border-gray-200 bg-white"
+                } focus:border-purple-600 focus:bg-white focus:ring-4 focus:ring-purple-100`}
+              />
+            ))}
           </div>
+
+          <p className="mt-3 text-center text-xs text-gray-400">
+            {shareCode.length} of {CODE_LENGTH} characters entered
+          </p>
+
+          <button
+            type="submit"
+            disabled={loading || downloading || shareCode.length !== CODE_LENGTH}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3.5 font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                Searching...
+              </>
+            ) : (
+              "Find File"
+            )}
+          </button>
         </form>
 
         {/* Loading state */}
         {loading && (
-          <div className="mt-8 text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600" />
-
-            <p className="mt-3 text-sm text-purple-600">
-              Searching for your shared file...
-            </p>
-          </div>
+          <p className="mt-5 text-center text-sm text-purple-600">
+            Searching for your shared file...
+          </p>
         )}
 
         {/* Error message */}
         {!loading && error && (
           <div
             role="alert"
-            className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+            className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
           >
             <p className="font-semibold">Unable to retrieve file</p>
             <p className="mt-1">{error}</p>
@@ -259,16 +349,13 @@ const Download = () => {
               </div>
             </div>
 
-            {/* Share code */}
             <div className="mt-5 rounded-lg bg-purple-50 p-3">
               <p className="text-xs text-gray-500">Share code</p>
-
               <p className="mt-1 break-all font-mono font-bold text-purple-700">
                 {file.shareCode || activeCode}
               </p>
             </div>
 
-            {/* Download button */}
             <button
               type="button"
               onClick={handleDownload}

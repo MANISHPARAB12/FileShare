@@ -68,6 +68,10 @@ const Navbar = () => {
             <NavLink to="/faq" className={navLinkClass}>
               FAQ
             </NavLink>
+
+            <NavLink to="/download" className={navLinkClass}>
+              Download
+            </NavLink>
           </div>
 
           {/* Mobile Menu Button */}
@@ -114,7 +118,7 @@ const Navbar = () => {
 
       {/* Mobile Sidebar and Overlay */}
       <div
-       className={`fixed inset-0 z-[100] md:hidden ${
+       className={`fixed inset-0 z-100 md:hidden ${
           menuOpen
             ? "visible"
             : "invisible pointer-events-none"
@@ -224,6 +228,14 @@ const Navbar = () => {
               tabIndex={menuOpen ? 0 : -1}
             >
               FAQ
+            </NavLink>
+            <NavLink
+              to="/download"
+              onClick={() => setMenuOpen(false)}
+              className={mobileLinkClass}
+              tabIndex={menuOpen ? 0 : -1}
+            >
+              Download
             </NavLink>
           </div>
 

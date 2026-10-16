@@ -3,7 +3,7 @@ import  Upload  from "./Upload";
 
 function Home() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white ">
 
       {/* Hero and Upload Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-purple-50 via-white to-indigo-100 px-4 pb-20 pt-16 sm:pt-24">
@@ -30,7 +30,7 @@ function Home() {
           </h1>
 
           {/* Description */}
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-gray-600 sm:text-lg">
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-gray-600 sm:text-lg px-10">
             Need to send a document, photo, or video?
             Choose your files and get started with FileShare.
           </p>

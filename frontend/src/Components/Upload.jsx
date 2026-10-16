@@ -186,15 +186,15 @@ function Upload() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full px-20">
       {!uploaded && (
         <div>
-          <div className="mb-8 text-center">
+          <div className="mb-8 text-center mt-5">
             <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
               Share your files
             </h1>
 
-            <p className="mx-auto mt-3 max-w-2xl text-gray-600">
+            <p className="mx-auto mt-3 max-w-2xl text-gray-600 mt-5">
               Select your files or drag and drop them below to create
               a sharing link.
             </p>
@@ -353,7 +353,7 @@ function Upload() {
           <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl">
             <div className="grid grid-cols-1 md:grid-cols-2">
               {/* Instructions and sharing information */}
-              <div className="p-6 sm:p-8 lg:p-10">
+              <div className="p-6 sm:p-8 lg:p-10 ">
                 <h3 className="text-2xl font-bold text-gray-900">
                   Share your files
                 </h3>

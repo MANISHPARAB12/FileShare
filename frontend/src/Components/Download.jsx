@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+
+import { useCallback, useEffect, useState } from "react";
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:8956"
@@ -11,6 +13,54 @@ function cleanPin(value) {
     .slice(0, 6);
 }
 
+// Supports query links, path-based links, and hash-based links.
+function getPinFromUrl() {
+  const currentUrl = new URL(window.location.href);
+
+  // Example: /download?pin=A1B2C3
+  // Example: /download?code=A1B2C3
+  let urlPin =
+    currentUrl.searchParams.get("pin") ||
+    currentUrl.searchParams.get("code");
+
+  // Example: /download/A1B2C3
+  if (!urlPin) {
+    const segments = currentUrl.pathname
+      .split("/")
+      .filter(Boolean);
+
+    const lastSegment = segments.at(-1);
+
+    if (lastSegment && /^[A-Za-z0-9]{6}$/.test(lastSegment)) {
+      urlPin = lastSegment;
+    }
+  }
+
+  // Example: /#/download?pin=A1B2C3
+  if (!urlPin && currentUrl.hash.includes("?")) {
+    const hashQuery = currentUrl.hash.split("?")[1];
+    const hashParams = new URLSearchParams(hashQuery);
+
+    urlPin =
+      hashParams.get("pin") ||
+      hashParams.get("code");
+  }
+
+  return urlPin ? cleanPin(urlPin) : "";
+}
+
+function formatFileSize(size) {
+  const bytes = Number(size) || 0;
+
+  if (bytes <= 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 function Download() {
   const [pin, setPin] = useState("");
   const [batch, setBatch] = useState(null);
@@ -19,23 +69,8 @@ function Download() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Read PIN from the URL.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const urlPin = params.get("pin") || params.get("code");
-
-    if (urlPin) {
-      const cleaned = cleanPin(urlPin);
-      setPin(cleaned);
-
-      if (cleaned.length === 6) {
-        findFiles(cleaned);
-      }
-    }
-  }, []);
-
-  // Find a batch by PIN.
-  async function findFiles(code = pin) {
+  // Look up files using the existing backend API.
+  const findFiles = useCallback(async (code) => {
     const cleaned = cleanPin(code);
 
     if (cleaned.length !== 6) {
@@ -44,6 +79,7 @@ function Download() {
       return;
     }
 
+    setPin(cleaned);
     setLoading(true);
     setError("");
     setSuccess("");
@@ -63,7 +99,9 @@ function Download() {
       }
 
       if (!Array.isArray(data.files)) {
-        throw new Error("The server response did not contain a file list.");
+        throw new Error(
+          "The server response did not contain a file list."
+        );
       }
 
       setBatch({
@@ -78,9 +116,18 @@ function Download() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  // Download one file.
+  // Automatically load the PIN when someone opens a shared link.
+  useEffect(() => {
+    const urlPin = getPinFromUrl();
+
+    if (urlPin.length === 6) {
+      setPin(urlPin);
+      findFiles(urlPin);
+    }
+  }, [findFiles]);
+
   async function downloadFile(file, index) {
     if (!batch) return;
 
@@ -91,26 +138,20 @@ function Download() {
     try {
       const code = batch.shareCode || pin;
 
-      // Prefer the download URL supplied by the backend.
       const downloadPath =
         file.downloadUrl ||
         `/api/files/download/${encodeURIComponent(code)}/${index}`;
 
-      const downloadUrl = downloadPath.startsWith("http")
+      const downloadUrl = /^https?:\/\//i.test(downloadPath)
         ? downloadPath
-        : `${API_BASE_URL}${downloadPath.startsWith("/") ? "" : "/"}${downloadPath}`;
+        : `${API_BASE_URL}${
+            downloadPath.startsWith("/") ? "" : "/"
+          }${downloadPath}`;
 
       const response = await fetch(downloadUrl);
 
       if (!response.ok) {
         const responseText = await response.text();
-
-        console.error("Download request failed:", {
-          status: response.status,
-          url: downloadUrl,
-          response: responseText,
-        });
-
         let message = `Download failed (${response.status}).`;
 
         try {
@@ -136,12 +177,13 @@ function Download() {
       link.click();
       link.remove();
 
-      // Allow the browser to start the download before cleanup.
       window.setTimeout(() => {
         window.URL.revokeObjectURL(objectUrl);
       }, 1000);
 
-      setSuccess(`${file.originalName || "File"} download started.`);
+      setSuccess(
+        `${file.originalName || "File"} download started.`
+      );
     } catch (err) {
       console.error("Download error:", err);
       setError(err.message || "Unable to download this file.");
@@ -150,17 +192,8 @@ function Download() {
     }
   }
 
-  function formatFileSize(size) {
-    if (!size) return "";
-
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-
-    return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-  }
-
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 px-4 py-12">
+    <main className="min-screen bg-linear-to-br from-purple-50 via-white to-indigo-50 px-4 py-12">
       <div className="mx-auto max-w-3xl">
         {/* Heading */}
         <div className="mb-8 text-center">
@@ -195,7 +228,7 @@ function Download() {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            findFiles();
+            findFiles(pin);
           }}
           className="rounded-3xl border border-gray-200 bg-white p-6 shadow-xl sm:p-8"
         >
@@ -214,6 +247,7 @@ function Download() {
               setPin(cleanPin(event.target.value));
               setError("");
               setSuccess("");
+              setBatch(null);
             }}
             placeholder="A1B2C3"
             maxLength={6}
@@ -238,7 +272,7 @@ function Download() {
           {error && (
             <p
               role="alert"
-              className="mt-4 break-words rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600"
+              className="mt-4 wrap-break-word rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600"
             >
               {error}
             </p>
@@ -247,7 +281,7 @@ function Download() {
           {success && (
             <p
               role="status"
-              className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700"
+              className="mt-4 wrap-break-word rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700"
             >
               {success}
             </p>
@@ -298,11 +332,11 @@ function Download() {
                     </div>
 
                     <div className="min-w-0">
-                      <p className="break-words font-semibold text-gray-800">
+                      <p className="wrap-break-word font-semibold text-gray-800">
                         {file.originalName || `File ${index + 1}`}
                       </p>
 
-                      {file.size && (
+                      {file.size != null && (
                         <p className="mt-1 text-sm text-gray-500">
                           {formatFileSize(file.size)}
                         </p>

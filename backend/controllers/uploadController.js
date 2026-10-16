@@ -1,4 +1,6 @@
 
+const crypto = require("crypto");
+
 const {
   generateShareCode,
   safeFilename,
@@ -7,7 +9,8 @@ const {
 
 const { uploadBuffer } = require("../services/cloudinaryService");
 
-// Temporary in-memory storage for uploaded batches.
+// Temporary storage shared by uploadController and downloadController.
+// Share codes are lost when the backend restarts.
 const sharedFiles = new Map();
 
 async function uploadFile(req, res, next) {
@@ -28,7 +31,8 @@ async function uploadFile(req, res, next) {
       });
     }
 
-    const shareCode = generateShareCode(sharedFiles);
+    // Generate ONE unique PIN for the entire upload batch.
+    const shareCode = generateShareCode(sharedFiles).toUpperCase();
 
     const frontendUrl = (
       process.env.FRONTEND_URL || "http://localhost:5173"
@@ -36,7 +40,7 @@ async function uploadFile(req, res, next) {
 
     const files = [];
 
-    // Upload each file to Cloudinary.
+    // Upload every selected file to Cloudinary.
     for (const uploadedFile of uploadedFiles) {
       const originalName = safeFilename(uploadedFile.originalname);
       const resourceType = getResourceType(uploadedFile);
@@ -50,6 +54,7 @@ async function uploadFile(req, res, next) {
       );
 
       files.push({
+        id: crypto.randomUUID(),
         originalName,
         size: uploadedFile.size,
         type: uploadedFile.mimetype || "application/octet-stream",
@@ -68,7 +73,7 @@ async function uploadFile(req, res, next) {
       createdAt: new Date().toISOString(),
     };
 
-    // Store all files under the same PIN.
+    // Save the complete batch under one PIN.
     sharedFiles.set(shareCode, batch);
 
     return res.status(201).json({
@@ -77,9 +82,8 @@ async function uploadFile(req, res, next) {
       shareCode: batch.shareCode,
       shareUrl: batch.shareUrl,
       fileCount: batch.files.length,
-
-      // Return download URLs matching uploadRoutes.js.
       files: batch.files.map((file, index) => ({
+        id: file.id,
         originalName: file.originalName,
         size: file.size,
         type: file.type,
@@ -94,7 +98,11 @@ async function uploadFile(req, res, next) {
 }
 
 function getSharedFile(req, res) {
-  const batch = sharedFiles.get(req.params.code);
+  const code = String(req.params.code || "")
+    .trim()
+    .toUpperCase();
+
+  const batch = sharedFiles.get(code);
 
   if (!batch) {
     return res.status(404).json({
@@ -109,8 +117,8 @@ function getSharedFile(req, res) {
     shareCode: batch.shareCode,
     shareUrl: batch.shareUrl,
     fileCount: batch.files.length,
-
     files: batch.files.map((file, index) => ({
+      id: file.id,
       originalName: file.originalName,
       size: file.size,
       type: file.type,
@@ -122,10 +130,15 @@ function getSharedFile(req, res) {
 }
 
 // Used by downloadController.js.
+// The index identifies a file within the batch.
 function findSharedFile(code, index = 0) {
-  const batch = sharedFiles.get(code);
+  const normalizedCode = String(code || "")
+    .trim()
+    .toUpperCase();
 
-  if (!batch) {
+  const batch = sharedFiles.get(normalizedCode);
+
+  if (!batch || !Number.isInteger(index) || index < 0) {
     return null;
   }
 

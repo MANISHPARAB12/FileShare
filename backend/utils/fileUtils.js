@@ -3,18 +3,17 @@ const crypto = require("crypto");
 const path = require("path");
 
 function generateShareCode(existingFiles) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code;
 
   do {
-    code = Array.from(crypto.randomBytes(6))
-      .map((byte) => chars[byte % chars.length])
-      .join("");
+    code = require("crypto")
+      .randomBytes(3)
+      .toString("hex")
+      .toUpperCase();
   } while (existingFiles.has(code));
 
   return code;
 }
-
 function safeFilename(input) {
   return (
     path

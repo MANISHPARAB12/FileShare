@@ -1,8 +1,9 @@
-
 import { useState } from "react";
+
 import { QRCodeSVG } from "qrcode.react";
 
 const MAX_FILES = 10;
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const API_BASE_URL = (
@@ -11,19 +12,40 @@ const API_BASE_URL = (
 
 function Upload() {
   const [files, setFiles] = useState([]);
+
   const [uploading, setUploading] = useState(false);
+
   const [error, setError] = useState("");
+
   const [success, setSuccess] = useState("");
+
   const [uploaded, setUploaded] = useState(null);
+
   const [dragActive, setDragActive] = useState(false);
+
   const [copiedItem, setCopiedItem] = useState("");
 
   // Add and validate selected files.
+
   function addFiles(selectedFiles) {
     setError("");
     setSuccess("");
 
-    const selected = Array.from(selectedFiles);
+    const selected = Array.from(selectedFiles || []);
+
+    if (selected.length === 0) return;
+
+    // Check EXE extensions before checking file size.
+    const executableFile = selected.find((file) =>
+      file.name.toLowerCase().endsWith(".exe")
+    );
+
+    if (executableFile) {
+      setError(
+        `${executableFile.name} is not uploadable. EXE files are not allowed.`
+      );
+      return;
+    }
 
     if (files.length + selected.length > MAX_FILES) {
       setError(`You can upload a maximum of ${MAX_FILES} files.`);
@@ -45,7 +67,14 @@ function Upload() {
           existing.lastModified === file.lastModified
       );
 
-      if (!duplicate) {
+      const duplicateInSelection = validFiles.some(
+        (existing) =>
+          existing.name === file.name &&
+          existing.size === file.size &&
+          existing.lastModified === file.lastModified
+      );
+
+      if (!duplicate && !duplicateInSelection) {
         validFiles.push(file);
       }
     }
@@ -63,6 +92,7 @@ function Upload() {
 
   function handleDrop(event) {
     event.preventDefault();
+
     setDragActive(false);
 
     if (event.dataTransfer.files) {
@@ -78,11 +108,14 @@ function Upload() {
 
   function formatFileSize(size) {
     if (size < 1024) return `${size} B`;
+
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+
     return `${(size / (1024 * 1024)).toFixed(2)} MB`;
   }
 
   // Copy URL or PIN and show confirmation.
+
   async function copyText(text, itemName = "Text") {
     try {
       if (navigator.clipboard && window.isSecureContext) {
@@ -91,15 +124,21 @@ function Upload() {
         const textArea = document.createElement("textarea");
 
         textArea.value = text;
+
         textArea.style.position = "fixed";
+
         textArea.style.left = "-9999px";
+
         textArea.style.top = "0";
 
         document.body.appendChild(textArea);
+
         textArea.focus();
+
         textArea.select();
 
         const copied = document.execCommand("copy");
+
         textArea.remove();
 
         if (!copied) {
@@ -108,29 +147,34 @@ function Upload() {
       }
 
       setCopiedItem(itemName);
+
       setError("");
 
       window.setTimeout(() => {
-        setCopiedItem((current) =>
-          current === itemName ? "" : current
-        );
+        setCopiedItem((current) => (current === itemName ? "" : current));
       }, 2500);
     } catch (err) {
       console.error("Copy error:", err);
+
       setError(`Unable to copy ${itemName}. Please copy it manually.`);
     }
   }
 
   // Upload selected files to the backend.
+
   async function handleUpload() {
     if (files.length === 0) {
       setError("Please select at least one file.");
+
       return;
     }
 
     setUploading(true);
+
     setError("");
+
     setSuccess("");
+
     setUploaded(null);
 
     try {
@@ -142,8 +186,10 @@ function Upload() {
 
       const response = await fetch(
         `${API_BASE_URL}/api/files/upload`,
+
         {
           method: "POST",
+
           body: formData,
         }
       );
@@ -155,8 +201,10 @@ function Upload() {
       }
 
       // Build the URL for the current frontend.
+
       const shareUrl = new URL(
         "/download",
+
         window.location.origin
       );
 
@@ -164,13 +212,16 @@ function Upload() {
 
       setUploaded({
         ...data,
+
         shareUrl: shareUrl.toString(),
       });
 
       setFiles([]);
+
       setSuccess("Files uploaded successfully!");
     } catch (err) {
       console.error("Upload error:", err);
+
       setError(err.message || "Unable to upload files.");
     } finally {
       setUploading(false);
@@ -179,9 +230,13 @@ function Upload() {
 
   function handleNewUpload() {
     setFiles([]);
+
     setUploaded(null);
+
     setError("");
+
     setSuccess("");
+
     setCopiedItem("");
   }
 
@@ -195,19 +250,22 @@ function Upload() {
             </h1>
 
             <p className="mx-auto mt-3 max-w-2xl text-gray-600 mt-5">
-              Select your files or drag and drop them below to create
-              a sharing link.
+              Select your files or drag and drop them below to create a sharing
+              link.
             </p>
           </div>
 
           {/* Drag and drop area */}
+
           <div
             onDragOver={(event) => {
               event.preventDefault();
+
               setDragActive(true);
             }}
             onDragLeave={(event) => {
               event.preventDefault();
+
               setDragActive(false);
             }}
             onDrop={handleDrop}
@@ -230,7 +288,9 @@ function Upload() {
                 strokeLinejoin="round"
               >
                 <path d="M12 3v12" />
+
                 <path d="m17 8-5-5-5 5" />
+
                 <path d="M5 21h14" />
               </svg>
             </div>
@@ -280,9 +340,8 @@ function Upload() {
             <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-gray-900">
-                    Selected files
-                  </h3>
+                  <h3 className="font-bold text-gray-900">Selected files</h3>
+
                   <p className="text-sm text-gray-500">
                     {files.length} file(s)
                   </p>
@@ -303,6 +362,7 @@ function Upload() {
                       <p className="truncate font-medium text-gray-800">
                         {file.name}
                       </p>
+
                       <p className="text-xs text-gray-500">
                         {formatFileSize(file.size)}
                       </p>
@@ -326,7 +386,9 @@ function Upload() {
                 disabled={uploading}
                 className="mt-6 w-full rounded-xl bg-purple-600 px-6 py-4 font-bold text-white shadow-md transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {uploading ? "Uploading files..." : `Upload ${files.length} file(s)`}
+                {uploading
+                  ? "Uploading files..."
+                  : `Upload ${files.length} file(s)`}
               </button>
             </div>
           )}
@@ -334,6 +396,7 @@ function Upload() {
       )}
 
       {/* Share panel */}
+
       {uploaded && (
         <div className="mt-4">
           <div className="mb-6 text-center">
@@ -353,6 +416,7 @@ function Upload() {
           <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl">
             <div className="grid grid-cols-1 md:grid-cols-2">
               {/* Instructions and sharing information */}
+
               <div className="p-6 sm:p-8 lg:p-10 ">
                 <h3 className="text-2xl font-bold text-gray-900">
                   Share your files
@@ -366,16 +430,21 @@ function Upload() {
                   {[
                     {
                       title: "Open FileShare",
+
                       description:
                         "Open FileShare on the device where you want to receive the files.",
                     },
+
                     {
                       title: "Scan this QR code",
+
                       description:
                         "Use your phone camera to scan the code displayed on the right.",
                     },
+
                     {
                       title: "Enter your PIN",
+
                       description:
                         "Enter the sharing PIN to access your files.",
                     },
@@ -389,6 +458,7 @@ function Upload() {
                         <p className="font-semibold text-gray-800">
                           {step.title}
                         </p>
+
                         <p className="mt-1 text-sm leading-6 text-gray-500">
                           {step.description}
                         </p>
@@ -398,6 +468,7 @@ function Upload() {
                 </div>
 
                 {/* Share URL */}
+
                 <div className="mt-8">
                   <label
                     htmlFor="share-url"
@@ -417,9 +488,7 @@ function Upload() {
 
                     <button
                       type="button"
-                      onClick={() =>
-                        copyText(uploaded.shareUrl, "Share URL")
-                      }
+                      onClick={() => copyText(uploaded.shareUrl, "Share URL")}
                       className="shrink-0 rounded-xl bg-purple-600 px-4 py-3 font-semibold text-white transition hover:bg-purple-700"
                     >
                       {copiedItem === "Share URL" ? "Copied!" : "Copy"}
@@ -428,6 +497,7 @@ function Upload() {
                 </div>
 
                 {/* PIN */}
+
                 <div className="mt-5 rounded-2xl border border-purple-200 bg-purple-50 p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -442,9 +512,7 @@ function Upload() {
 
                     <button
                       type="button"
-                      onClick={() =>
-                        copyText(uploaded.shareCode, "PIN")
-                      }
+                      onClick={() => copyText(uploaded.shareCode, "PIN")}
                       className="rounded-xl border border-purple-200 bg-white px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-100"
                     >
                       {copiedItem === "PIN" ? "PIN Copied!" : "Copy PIN"}
@@ -453,12 +521,14 @@ function Upload() {
                 </div>
 
                 {/* Visible copy confirmation */}
+
                 {copiedItem && (
                   <p
                     role="status"
                     className="mt-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700"
                   >
                     <span className="mr-2">✓</span>
+
                     {copiedItem === "PIN"
                       ? "PIN copied successfully!"
                       : "Share URL copied successfully!"}
@@ -476,14 +546,15 @@ function Upload() {
               </div>
 
               {/* QR code */}
+
               <div className="flex min-h-[420px] flex-col items-center justify-center bg-gray-50 p-6 sm:p-10">
                 <h3 className="text-xl font-bold text-gray-900">
                   Scan to open FileShare
                 </h3>
 
                 <p className="mt-2 max-w-sm text-center text-sm leading-6 text-gray-500">
-                  Point your phone camera at this QR code to open your
-                  FileShare download page.
+                  Point your phone camera at this QR code to open your FileShare
+                  download page.
                 </p>
 
                 <div className="mt-7 rounded-3xl border border-gray-200 bg-white p-5 shadow-md">

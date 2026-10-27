@@ -1,4 +1,5 @@
 const express = require("express");
+const multer = require("multer");
 const upload = require("../middleware/upload");
 
 const {
@@ -6,63 +7,53 @@ const {
   getSharedFile,
 } = require("../controllers/uploadController");
 
-const {
-  downloadFile,
-} = require("../controllers/downloadController");
+const { downloadFile } = require("../controllers/downloadController");
 
 const router = express.Router();
 
-// ============================================
-// 1. UPLOAD MULTIPLE FILES
-// ============================================
-// Accepts up to 10 files in a single request.
-// The frontend must append every file using
-// the FormData field name "files".
+// 1. Upload up to 10 files using FormData field name "files".
+router.post("/files/upload", (req, res, next) => {
+  upload.array("files", 10)(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            message: "File exceeds the 10 MB file size limit.",
+          });
+        }
 
-router.post(
-  "/files/upload",
-  upload.array("files", 10),
-  uploadFile
-);
+        if (err.code === "LIMIT_FILE_COUNT") {
+          return res.status(400).json({
+            success: false,
+            message: "You can upload a maximum of 10 files.",
+          });
+        }
 
-// ============================================
-// 2. FIND SHARED FILES USING THE PIN
-// ============================================
-// Example:
-// GET /api/files/share/A7K2P9
+        return res.status(400).json({
+          success: false,
+          message: err.message,
+        });
+      }
 
-router.get(
-  "/files/share/:code",
-  getSharedFile
-);
+      // Custom fileFilter error, including .exe rejection.
+      return res.status(400).json({
+        success: false,
+        message: err.message || "File upload failed.",
+      });
+    }
 
-// ============================================
-// 3. DOWNLOAD A SPECIFIC FILE
-// ============================================
-// Example:
-// GET /api/files/download/A7K2P9/0
-// GET /api/files/download/A7K2P9/1
-//
-// The index identifies the file in the batch.
-// Index 0 = first file, index 1 = second file.
+    return uploadFile(req, res, next);
+  });
+});
 
-router.get(
-  "/files/download/:code/:index",
-  downloadFile
-);
+// 2. Find shared files using a PIN.
+router.get("/files/share/:code", getSharedFile);
 
-// ============================================
-// 4. BACKWARD-COMPATIBLE DOWNLOAD ROUTE
-// ============================================
-// Example:
-// GET /api/files/download/A7K2P9
-//
-// Downloads the first file when no index is given.
+// 3. Download a specific file in a batch.
+router.get("/files/download/:code/:index", downloadFile);
 
-router.get(
-  "/files/download/:code",
-  downloadFile
-);
+// 4. Backward-compatible download route for the first file.
+router.get("/files/download/:code", downloadFile);
 
-// Export routes for server.js
 module.exports = router;

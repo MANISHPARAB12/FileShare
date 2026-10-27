@@ -33,7 +33,7 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/", (_req, res) => {
-  res.json({ message: "ShareBox API is running" });
+  res.json({ message: "Server is running" });
 });
 
 app.use("/api", uploadRoutes);
@@ -42,5 +42,5 @@ app.use(errorHandler);
 const PORT = Number(process.env.PORT) || 8956;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`ShareBox API listening on port ${PORT}`);
+  console.log(`Server is listening on port ${PORT}`);
 });

@@ -1,5 +1,5 @@
-
 const crypto = require("crypto");
+const path = require("path");
 
 const {
   generateShareCode,
@@ -31,9 +31,20 @@ async function uploadFile(req, res, next) {
       });
     }
 
-    // Generate ONE unique PIN for the entire upload batch.
-    const shareCode = generateShareCode(sharedFiles).toUpperCase();
+    // Defensive check before uploading any file to Cloudinary.
+    const executableFile = uploadedFiles.find((file) =>
+      path.extname(String(file.originalname || "")).toLowerCase() === ".exe"
+    );
 
+    if (executableFile) {
+      return res.status(400).json({
+        success: false,
+        message: `${executableFile.originalname} is not uploadable. EXE files are not allowed.`,
+      });
+    }
+
+    // Generate one unique PIN for the entire upload batch.
+    const shareCode = generateShareCode(sharedFiles).toUpperCase();
     const frontendUrl = (
       process.env.FRONTEND_URL || "http://localhost:5173"
     ).replace(/\/+$/, "");
@@ -66,14 +77,11 @@ async function uploadFile(req, res, next) {
 
     const batch = {
       shareCode,
-      shareUrl: `${frontendUrl}/download?pin=${encodeURIComponent(
-        shareCode
-      )}`,
+      shareUrl: `${frontendUrl}/download?pin=${encodeURIComponent(shareCode)}`,
       files,
       createdAt: new Date().toISOString(),
     };
 
-    // Save the complete batch under one PIN.
     sharedFiles.set(shareCode, batch);
 
     return res.status(201).json({
@@ -87,9 +95,7 @@ async function uploadFile(req, res, next) {
         originalName: file.originalName,
         size: file.size,
         type: file.type,
-        downloadUrl: `/api/files/download/${encodeURIComponent(
-          batch.shareCode
-        )}/${index}`,
+        downloadUrl: `/api/files/download/${encodeURIComponent(batch.shareCode)}/${index}`,
       })),
     });
   } catch (error) {
@@ -98,17 +104,13 @@ async function uploadFile(req, res, next) {
 }
 
 function getSharedFile(req, res) {
-  const code = String(req.params.code || "")
-    .trim()
-    .toUpperCase();
-
+  const code = String(req.params.code || "").trim().toUpperCase();
   const batch = sharedFiles.get(code);
 
   if (!batch) {
     return res.status(404).json({
       success: false,
-      message:
-        "Files not found. The link may have expired or the server may have restarted.",
+      message: "Files not found. The link may have expired or the server may have restarted.",
     });
   }
 
@@ -122,20 +124,13 @@ function getSharedFile(req, res) {
       originalName: file.originalName,
       size: file.size,
       type: file.type,
-      downloadUrl: `/api/files/download/${encodeURIComponent(
-        batch.shareCode
-      )}/${index}`,
+      downloadUrl: `/api/files/download/${encodeURIComponent(batch.shareCode)}/${index}`,
     })),
   });
 }
 
-// Used by downloadController.js.
-// The index identifies a file within the batch.
 function findSharedFile(code, index = 0) {
-  const normalizedCode = String(code || "")
-    .trim()
-    .toUpperCase();
-
+  const normalizedCode = String(code || "").trim().toUpperCase();
   const batch = sharedFiles.get(normalizedCode);
 
   if (!batch || !Number.isInteger(index) || index < 0) {

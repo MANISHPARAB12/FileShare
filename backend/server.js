@@ -10,7 +10,7 @@ const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
-const allowedOrigin = (process.env.FRONTEND_URL || "").replace(/\/+$/, "");
+const allowedOrigin = (process.env.FRONTEND_URL || "https://localhost:5173").replace(/\/+$/, "");
 
 app.use(
   cors({

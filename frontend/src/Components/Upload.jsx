@@ -7,7 +7,7 @@ const MAX_FILES = 10;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const API_BASE_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:8956"
+  import.meta.env.VITE_API_URL || "http://localhost:5173"
 ).replace(/\/+$/, "");
 
 function Upload() {

@@ -141,3 +141,13 @@ This project was collaboratively developed by:
 ---
 
 ⭐ If you find this project useful, consider giving the repository a star!
+
+
+
+CLOUDINARY_API_KEY 549422148137159
+
+CLOUDINARY_API_SECRET VkllFrSexdGbSW5Ow1KP1_buJ48
+
+CLOUDINARY_CLOUD_NAME zhpthsqs
+
+NODE_ENV  development

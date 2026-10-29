@@ -77,7 +77,6 @@ function FAQ() {
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-
       {/* Page Heading */}
       <section className="mx-auto mb-10 max-w-3xl text-center sm:mb-12">
         <span className="mb-3 inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-semibold uppercase tracking-widest text-purple-700">
@@ -117,7 +116,7 @@ function FAQ() {
             return (
               <article
                 key={faq.question}
-                className={`overflow-hidden rounded-xl border bg-white shadow-sm transition duration-200 ${
+                className={`overflow-hidden rounded-xl border bg-white shadow-sm transition-colors duration-300 ${
                   isOpen
                     ? "border-purple-300 shadow-md"
                     : "border-gray-200 hover:border-purple-200"
@@ -129,11 +128,12 @@ function FAQ() {
                   onClick={() => toggleFAQ(index)}
                   aria-expanded={isOpen}
                   aria-controls={answerId}
-                  className="flex w-full items-center justify-between gap-4 px-4 py-5 text-left transition hover:bg-purple-50/70 sm:px-6"
+                  className="flex w-full items-center justify-between gap-4 px-4 py-5 text-left transition-colors duration-300 hover:bg-purple-50/70 sm:px-6"
                 >
-                  <span className="flex items-start gap-3">
+                  <span className="flex min-w-0 items-start gap-3">
+                    {/* Question Number */}
                     <span
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm font-bold transition-colors duration-300 ${
                         isOpen
                           ? "bg-purple-600 text-white"
                           : "bg-purple-100 text-purple-700"
@@ -142,8 +142,9 @@ function FAQ() {
                       {index + 1}
                     </span>
 
+                    {/* Question Text */}
                     <span
-                      className={`pt-0.5 font-semibold leading-6 ${
+                      className={`pt-0.5 font-semibold leading-6 transition-colors duration-300 ${
                         isOpen
                           ? "text-purple-700"
                           : "text-gray-800"
@@ -153,16 +154,31 @@ function FAQ() {
                     </span>
                   </span>
 
-                  {/* Expand/Collapse Icon */}
+                  {/* Animated Expand/Collapse Chevron */}
                   <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xl transition duration-200 ${
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${
                       isOpen
-                        ? "rotate-180 bg-purple-100 text-purple-700"
+                        ? "bg-purple-100 text-purple-700"
                         : "bg-gray-100 text-gray-600"
                     }`}
                     aria-hidden="true"
                   >
-                    ⌄
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.8}
+                      stroke="currentColor"
+                      className={`h-5 w-5 transform transition-transform duration-300 ease-in-out ${
+                        isOpen ? "rotate-180" : "rotate-0"
+                      }`}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m6 9 6 6 6-6"
+                      />
+                    </svg>
                   </span>
                 </button>
 
@@ -186,11 +202,11 @@ function FAQ() {
       {/* Bottom Help Section */}
       <section className="mx-auto mt-12 max-w-3xl sm:mt-16">
         <div className="relative overflow-hidden rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-100 via-purple-50 to-indigo-100 px-6 py-9 text-center sm:px-10 sm:py-10">
-
           {/* Decorative Circle */}
           <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-purple-300/30 blur-2xl" />
 
           <div className="relative">
+            {/* Help Icon */}
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-md">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -227,7 +243,7 @@ function FAQ() {
                   behavior: "smooth",
                 });
               }}
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-6 py-3 font-semibold text-white shadow-md transition-colors duration-300 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
             >
               Browse FAQs
               <span aria-hidden="true">↑</span>
@@ -235,7 +251,6 @@ function FAQ() {
           </div>
         </div>
       </section>
-
     </main>
   );
 }

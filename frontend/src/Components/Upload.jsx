@@ -242,7 +242,7 @@ function Upload() {
   }
 
   return (
-    <div className="w-full px-20">
+    <div className="w-full px-2">
       {!uploaded && (
         <div>
           <div className="mb-8 text-center mt-5">
@@ -250,7 +250,7 @@ function Upload() {
               Share your files
             </h1>
 
-            <p className="mx-auto mt-3 max-w-2xl text-gray-600 mt-5">
+            <p className="mx-auto mt-3 max-w-2xl text-gray-600">
               Select your files or drag and drop them below to create a sharing
               link.
             </p>

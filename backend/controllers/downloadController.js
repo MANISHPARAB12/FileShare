@@ -2,12 +2,13 @@
 const { Readable } = require("stream");
 const { pipeline } = require("stream/promises");
 
-// Must reference the same uploadController module.
-const { findSharedFile } = require("./uploadController");
+const File = require("../models/File");
 
 async function downloadFile(req, res, next) {
   try {
-    const code = req.params.code;
+    const code = String(req.params.code || "")
+      .trim()
+      .toUpperCase();
 
     const index =
       req.params.index === undefined
@@ -21,24 +22,29 @@ async function downloadFile(req, res, next) {
       });
     }
 
-    const file = findSharedFile(code, index);
+    // Find active file in MongoDB
+    const file = await File.findOne({
+      shareCode: code,
+      fileIndex: index,
+      expiresAt: { $gt: new Date() },
+    });
 
     if (!file) {
-      return res.status(404).json({
+      return res.status(410).json({
         success: false,
-        message: "File not found. Please upload the files again.",
+        message: "File not found or sharing link has expired.",
       });
     }
 
-    if (!file.url) {
+    if (!file.fileUrl) {
       return res.status(500).json({
         success: false,
-        message: "The file URL is missing.",
+        message: "File URL is missing.",
       });
     }
 
     const originalName = String(
-      file.originalName || "download"
+      file.fileName || "download"
     ).replace(/[\/\\\r\n\0]/g, "_");
 
     const asciiName = originalName
@@ -47,18 +53,12 @@ async function downloadFile(req, res, next) {
 
     const encodedName = encodeURIComponent(originalName);
 
-    const cloudinaryResponse = await fetch(file.url);
+    const cloudinaryResponse = await fetch(file.fileUrl);
 
     if (!cloudinaryResponse.ok || !cloudinaryResponse.body) {
-      console.error(
-        "Cloudinary download failed:",
-        cloudinaryResponse.status,
-        cloudinaryResponse.statusText
-      );
-
       return res.status(502).json({
         success: false,
-        message: "Unable to retrieve the file from Cloudinary.",
+        message: "Unable to retrieve file from Cloudinary.",
       });
     }
 
@@ -83,8 +83,9 @@ async function downloadFile(req, res, next) {
       Readable.fromWeb(cloudinaryResponse.body),
       res
     );
+
   } catch (error) {
-    console.error("Download controller error:", error);
+    console.error("Download error:", error.message);
 
     if (res.headersSent) {
       res.destroy(error);
@@ -95,4 +96,6 @@ async function downloadFile(req, res, next) {
   }
 }
 
-module.exports = { downloadFile };
+module.exports = {
+  downloadFile,
+};

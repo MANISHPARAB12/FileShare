@@ -1,5 +1,7 @@
+
 const express = require("express");
 const multer = require("multer");
+
 const upload = require("../middleware/upload");
 
 const {
@@ -7,11 +9,13 @@ const {
   getSharedFile,
 } = require("../controllers/uploadController");
 
-const { downloadFile } = require("../controllers/downloadController");
+const {
+  downloadFile,
+} = require("../controllers/downloadController");
 
 const router = express.Router();
 
-// 1. Upload up to 10 files using FormData field name "files".
+// Upload up to 10 files
 router.post("/files/upload", (req, res, next) => {
   upload.array("files", 10)(req, res, (err) => {
     if (err) {
@@ -29,14 +33,8 @@ router.post("/files/upload", (req, res, next) => {
             message: "You can upload a maximum of 10 files.",
           });
         }
-
-        return res.status(400).json({
-          success: false,
-          message: err.message,
-        });
       }
 
-      // Custom fileFilter error, including .exe rejection.
       return res.status(400).json({
         success: false,
         message: err.message || "File upload failed.",
@@ -47,13 +45,13 @@ router.post("/files/upload", (req, res, next) => {
   });
 });
 
-// 2. Find shared files using a PIN.
+// Get shared files using PIN
 router.get("/files/share/:code", getSharedFile);
 
-// 3. Download a specific file in a batch.
+// Download a specific file
 router.get("/files/download/:code/:index", downloadFile);
 
-// 4. Backward-compatible download route for the first file.
+// Download first file (backward compatibility)
 router.get("/files/download/:code", downloadFile);
 
 module.exports = router;
